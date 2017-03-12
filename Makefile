@@ -901,7 +901,8 @@ buildimage: $(KERNEL_DIR)/vmlinux libcreduction vmlinux
 ifeq ($(strip $(BRCM_CHIP)), 3380)
 	make generate_3380_images
 else
-	make generate_images PROCESSOR_ID=$(PID)
+	make generate_images PROCESSOR_ID=a825
+	#make generate_images PROCESSOR_ID=$(PID)
 endif
 
 generate_images:
@@ -910,17 +911,16 @@ generate_images:
 	$(HOSTTOOLS_DIR)/ProgramStore2 -f vmlinux.bin -o $$KERNEL_NAME -v 002.17h -a $(KERNEL_LOAD_ADDRESS) -n2 -p 65536 -c 4 -s 0x$(PROCESSOR_ID)
 
 	export BRCM_KERNEL_ROOTFS=ubifs; \
-	export BRCM_NANDFLASH_BLOCK_SIZE=131072; \
-	export BRCM_NANDFLASH_PAGE_SIZE=2048; \
-	export BRCM_NANDFLASH_PAD_SIZE=100; \
+	export BRCM_NANDFLASH_BLOCK_SIZE=16384; \
+	export BRCM_NANDFLASH_PAGE_SIZE=512; \
+	export BRCM_NANDFLASH_PAD_SIZE=10; \
 	cd $(TARGETS_DIR); $(HOSTTOOLS_DIR)/fakeroot/fakeroot ./buildFS2
 
 	cd $(PROFILE_DIR); \
 	ROOTFS_NAME=$(FS_KERNEL_IMAGE_NAME)_rootfs_ubifs_bs128k_ps2k; \
 	APPS_NAME=$(APPS_IMAGE_NAME)_nand_ubifs_bs128k_ps2k; \
-	BRCM_NANDFLASH_BLOCK_SIZE=131072; \
-	BRCM_NANDFLASH_PAD_SIZE=100; \
-	dd if=/dev/urandom of=filepad.tmp bs=1k count=$$BRCM_NANDFLASH_PAD_SIZE; \
+	BRCM_NANDFLASH_BLOCK_SIZE=16384; \
+	dd if=/dev/zero of=filepad.tmp bs=$$(($$BRCM_NANDFLASH_BLOCK_SIZE-92)) count=1; \
 	$(HOSTTOOLS_DIR)/ProgramStore2 -f filepad.tmp -f2 rootfs.img -o $$ROOTFS_NAME -v 002.17h -a $(KERNEL_LOAD_ADDRESS) -n2 -p $$BRCM_NANDFLASH_BLOCK_SIZE -c 0 -s 0x$(PROCESSOR_ID); \
 	$(HOSTTOOLS_DIR)/ProgramStore2 -f filepad.tmp -f2 apps.img -o $$APPS_NAME -v 002.17h -a $(KERNEL_LOAD_ADDRESS) -n2 -p $$BRCM_NANDFLASH_BLOCK_SIZE -c 0 -s 0x$(PROCESSOR_ID);
 
